@@ -1,7 +1,34 @@
-# Les outils qu'on utilise
-ASM = nasm
-CC = x86_64-elf-gcc
-LD = x86_64-elf-ld
+# ============================================================
+# Détection de l'OS et choix de la toolchain
+# ============================================================
+ifeq ($(OS),Windows_NT)
+    # --- Windows : toolchain i686-elf (MinGW/MSYS2) ---
+    # Lancer "make" depuis Git Bash ou MSYS2 (dd est fourni avec)
+    ASM  = nasm
+    CC   = i686-elf-gcc
+    LD   = i686-elf-ld
+    QEMU = qemu-system-x86_64
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        # --- Linux : gcc natif en 32-bit ---
+        # Nécessite le paquet gcc-multilib (Debian/Ubuntu)
+        # et nasm + qemu-system-x86
+        ASM  = nasm
+        CC   = gcc
+        LD   = ld
+        QEMU = qemu-system-x86_64
+    else ifeq ($(UNAME_S),Darwin)
+        # --- macOS : toolchain cross à installer avec Homebrew ---
+        # brew install nasm x86_64-elf-gcc x86_64-elf-binutils qemu
+        ASM  = nasm
+        CC   = x86_64-elf-gcc
+        LD   = x86_64-elf-ld
+        QEMU = qemu-system-x86_64
+    else
+        $(error OS non supporté : $(UNAME_S))
+    endif
+endif
 
 # Les options de compilation
 CFLAGS = -ffreestanding -m32 -I kernel/
@@ -41,7 +68,7 @@ os.img: boot.bin kernel/kernel.bin
 
 # Lancer QEMU
 run: os.img
-	qemu-system-x86_64 -drive format=raw,file=os.img
+	$(QEMU) -drive format=raw,file=os.img
 
 # Nettoyer les fichiers générés
 clean:
