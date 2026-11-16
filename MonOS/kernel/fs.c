@@ -21,16 +21,49 @@ void fs_ls(void) {
         }
     }
 }
+// Comparer deux strings (pareil que dans shell.c)
+static int streq(const char *a, const char *b) {
+    int i = 0;
+    while (a[i] && b[i]) {
+        if (a[i] != b[i]) return 0;
+        i++;
+    }
+    return a[i] == b[i];
+}
+
 void fs_touch(const char *nom) {
     int i;
-    for (i = 0; i < 16; i++) {
-        if (fs[i].nom[0] == '\0') {  // si le fichier existe
-            int j = 0;
-        while (nom[j] != '\0') {
-        fs[i].nom[j] = nom[j];
-        j++;
-            }
-fs[i].nom[j] = '\0';}
-break;
+    int j;
+
+    // vérifier que le nom rentre dans nom[32] (max 31 caractères)
+    for (j = 0; nom[j] != '\0'; j++) {
+        if (j >= 31) {
+            print_string("Nom trop long (max 31)\n");
+            return;
+        }
     }
+
+    // vérifier si le fichier existe déjà
+    for (i = 0; i < 16; i++) {
+        if (fs[i].nom[0] != '\0' && streq(fs[i].nom, nom)) {
+            print_string("Fichier deja existant\n");
+            return;
+        }
+    }
+
+    // chercher un slot libre
+    for (i = 0; i < 16; i++) {
+        if (fs[i].nom[0] == '\0') {  // si le slot est libre
+            for (j = 0; nom[j] != '\0'; j++) {
+                fs[i].nom[j] = nom[j];
+            }
+            fs[i].nom[j] = '\0';
+            fs[i].taille = 0;
+            nb_fichiers++;
+            return;
+        }
+    }
+
+    // aucun slot libre
+    print_string("Disque plein\n");
 }
